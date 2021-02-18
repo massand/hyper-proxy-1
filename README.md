@@ -1,84 +1,30 @@
 # hyper-proxy
 
-[![Travis Build Status](https://travis-ci.org/tafia/hyper-proxy.svg?branch=master)](https://travis-ci.org/tafia/hyper-proxy)
-[![MIT licensed](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
-[![crates.io](http://meritbadge.herokuapp.com/hyper-proxy)](https://crates.io/crates/hyper-proxy)
+Fork of https://github.com/tafia/hyper-proxy
 
-A proxy connector for [hyper][1] based applications.
+This Rust crate exists due to the following reasons: 
+- The original Hyper proxy crate has not been updated to tokio 1.0 yet. 
+- The [Azure IoT Identity Service repo](https://github.com/Azure/iot-identity-service) uses the latest tokio 1.0 dependency. 
+- The original Hyper proxy crate does not support openssl engines via `hyper-openssl`. This is a feature requirement within the Azure IoT Identity Service binaries, in order to establish TLS handshakes with Azure services with X.509 credentials (where the keypair are locked within HSMs).
 
-[Documentation][3]
+## Contributing
 
-## Example
+This project welcomes contributions and suggestions.  Most contributions require you to agree to a
+Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
+the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
 
-```rust,no_run
-use hyper::{Client, Request, Uri};
-use hyper::client::HttpConnector;
-use futures::{TryFutureExt, TryStreamExt};
-use hyper_proxy::{Proxy, ProxyConnector, Intercept};
-use headers::Authorization;
-use std::error::Error;
+When you submit a pull request, a CLA bot will automatically determine whether you need to provide
+a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
+provided by the bot. You will only need to do this once across all repos using our CLA.
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let proxy = {
-        let proxy_uri = "http://my-proxy:8080".parse().unwrap();
-        let mut proxy = Proxy::new(Intercept::All, proxy_uri);
-        proxy.set_authorization(Authorization::basic("John Doe", "Agent1234"));
-        let connector = HttpConnector::new();
-        let proxy_connector = ProxyConnector::from_proxy(connector, proxy).unwrap();
-        proxy_connector
-    };
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
+contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
 
-    // Connecting to http will trigger regular GETs and POSTs.
-    // We need to manually append the relevant headers to the request
-    let uri: Uri = "http://my-remote-website.com".parse().unwrap();
-    let mut req = Request::get(uri.clone()).body(hyper::Body::empty()).unwrap();
+## Trademarks
 
-    if let Some(headers) = proxy.http_headers(&uri) {
-        req.headers_mut().extend(headers.clone().into_iter());
-    }
-
-    let client = Client::builder().build(proxy);
-    let fut_http = client.request(req)
-        .and_then(|res| res.into_body().map_ok(|x|x.to_vec()).try_concat())
-        .map_ok(move |body| ::std::str::from_utf8(&body).unwrap().to_string());
-
-    // Connecting to an https uri is straightforward (uses 'CONNECT' method underneath)
-    let uri = "https://my-remote-websitei-secured.com".parse().unwrap();
-    let fut_https = client.get(uri)
-        .and_then(|res| res.into_body().map_ok(|x|x.to_vec()).try_concat())
-        .map_ok(move |body| ::std::str::from_utf8(&body).unwrap().to_string());
-
-    let (http_res, https_res) = futures::future::join(fut_http, fut_https).await;
-    let (_, _) = (http_res?, https_res?);
-
-    Ok(())
-}
-```
-
-## Features
-
-`hyper-proxy` exposes three main Cargo features, to configure which TLS implementation it uses to
-connect to a proxy. It can also be configured without TLS support, by compiling without default
-features entirely. The supported list of configurations is:
-
-1. No TLS support (`default-features = false`)
-2. TLS support via `native-tls` to link against the operating system's native TLS implementation
-   (default)
-3. TLS support via `rustls` (`default-features = false, features = ["rustls"]`)
-4. TLS support via `rustls`, using a statically-compiled set of CA certificates to bypass the
-   operating system's default store (`default-features = false, features = ["rustls-webpki"]`)
-
-## Credits
-
-Large part of the code comes from [reqwest][2].
-The core part as just been extracted and slightly enhanced.
-
- Main changes are:
-- support for authentication
-- add non secured tunneling
-- add the possibility to add additional headers when connecting to the proxy
-
-[1]: https://crates.io/crates/hyper
-[2]: https://github.com/seanmonstar/reqwest
-[3]: https://docs.rs/hyper-proxy
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft 
+trademarks or logos is subject to and must follow 
+[Microsoft's Trademark & Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
+Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
+Any use of third-party trademarks or logos are subject to those third-party's policies.
