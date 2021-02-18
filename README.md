@@ -7,6 +7,8 @@ This Rust crate exists due to the following reasons:
 - The [Azure IoT Identity Service repo](https://github.com/Azure/iot-identity-service) uses the latest tokio 1.0 dependency. 
 - The original Hyper proxy crate does not support openssl engines via `hyper-openssl`. This is a feature requirement within the Azure IoT Identity Service binaries, in order to establish TLS handshakes with Azure services with X.509 credentials (where the keypair are locked within HSMs).
 
+We aim to upstream these changes to the tafia/hyper-proxy repository when it gains tokio 1.0.
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
