@@ -84,8 +84,6 @@ use headers::{authorization::Credentials, Authorization, HeaderMapExt, ProxyAuth
 use openssl::ssl::{SslConnector as OpenSslConnector, SslMethod};
 #[cfg(feature = "openssl-tls")]
 use tokio_openssl::SslStream;
-#[cfg(feature = "tls")]
-use tokio_tls::TlsConnector;
 #[cfg(feature = "rustls-base")]
 use webpki::DNSNameRef;
 
